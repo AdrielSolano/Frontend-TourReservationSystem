@@ -1,10 +1,10 @@
-// src/components/ReservationForm.jsx
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, MenuItem, FormControl, InputLabel, Select, Box, Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import api from '../api';
+import DialogMotionTransition from './DialogMotionTransition';
 
 export default function ReservationForm({ initialData, onClose, onSubmit }) {
   const [customers, setCustomers] = useState([]);
@@ -21,9 +21,15 @@ export default function ReservationForm({ initialData, onClose, onSubmit }) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const resCustomers = await api.get('/customers');
+      const resCustomers = await api.get('/customers', { params: { page: 1, limit: 1000 } });
+      const customersList =
+        resCustomers.data?.data?.customers ||
+        resCustomers.data?.customers ||
+        resCustomers.data || [];
+
       const resTours = await api.get('/tours/active');
-      setCustomers(resCustomers.data.data.customers);
+
+      setCustomers(customersList);
       setTours(resTours.data);
 
       if (initialData) {
@@ -78,15 +84,33 @@ export default function ReservationForm({ initialData, onClose, onSubmit }) {
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      scroll="paper"
+      PaperProps={{ sx: { maxHeight: '85vh' } }}
+      TransitionComponent={DialogMotionTransition}
+      keepMounted
+      BackdropProps={{ style: { backgroundColor: 'rgba(0,0,0,0.25)' } }}
+    >
       <DialogTitle>{initialData ? 'Editar Reservación' : 'Nueva Reservación'}</DialogTitle>
 
-      <DialogContent>
+      <DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          
-          <FormControl fullWidth>
-            <InputLabel>Cliente</InputLabel>
-            <Select name="customerId" value={formData.customerId} onChange={handleChange} required>
+          {/* Cliente */}
+          <FormControl fullWidth variant="outlined">
+            <InputLabel id="customer-label">Cliente</InputLabel>
+            <Select
+              labelId="customer-label"
+              name="customerId"
+              value={formData.customerId}
+              onChange={handleChange}
+              label="Cliente"
+              required
+              MenuProps={{ PaperProps: { style: { maxHeight: 320 } } }}
+            >
               {customers.map(c => (
                 <MenuItem key={c._id} value={c._id}>
                   {c.firstName} {c.lastName}
@@ -95,18 +119,36 @@ export default function ReservationForm({ initialData, onClose, onSubmit }) {
             </Select>
           </FormControl>
 
-          <FormControl fullWidth>
-            <InputLabel>Tour</InputLabel>
-            <Select name="tourId" value={formData.tourId} onChange={handleChange} required>
+          {/* Tour */}
+          <FormControl fullWidth variant="outlined">
+            <InputLabel id="tour-label">Tour</InputLabel>
+            <Select
+              labelId="tour-label"
+              name="tourId"
+              value={formData.tourId}
+              onChange={handleChange}
+              label="Tour"
+              required
+              MenuProps={{ PaperProps: { style: { maxHeight: 320 } } }}
+            >
               {tours.map(t => (
                 <MenuItem key={t._id} value={t._id}>{t.name}</MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <FormControl fullWidth>
-            <InputLabel>Fecha Disponible</InputLabel>
-            <Select name="date" value={formData.date} onChange={handleChange} required>
+          {/* Fecha Disponible */}
+          <FormControl fullWidth variant="outlined">
+            <InputLabel id="date-label">Fecha Disponible</InputLabel>
+            <Select
+              labelId="date-label"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              label="Fecha Disponible"
+              required
+              MenuProps={{ PaperProps: { style: { maxHeight: 320 } } }}
+            >
               {availableDates.map(date => (
                 <MenuItem key={date} value={date}>
                   {new Date(date).toLocaleDateString()}
@@ -115,6 +157,7 @@ export default function ReservationForm({ initialData, onClose, onSubmit }) {
             </Select>
           </FormControl>
 
+          {/* Número de Personas */}
           <TextField
             name="people"
             label="Número de Personas"
@@ -126,10 +169,17 @@ export default function ReservationForm({ initialData, onClose, onSubmit }) {
             fullWidth
           />
 
+          {/* Estado (solo edición) */}
           {initialData && (
-            <FormControl fullWidth>
-              <InputLabel>Estado</InputLabel>
-              <Select name="status" value={formData.status} onChange={handleChange}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel id="status-label">Estado</InputLabel>
+              <Select
+                labelId="status-label"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                label="Estado"
+              >
                 <MenuItem value="pending">Pendiente</MenuItem>
                 <MenuItem value="confirmed">Confirmado</MenuItem>
                 <MenuItem value="cancelled">Cancelado</MenuItem>
@@ -137,6 +187,7 @@ export default function ReservationForm({ initialData, onClose, onSubmit }) {
             </FormControl>
           )}
 
+          {/* Precio Total */}
           <Typography variant="subtitle1" mt={1}>
             Precio total: <strong>${calculatedPrice}</strong>
           </Typography>

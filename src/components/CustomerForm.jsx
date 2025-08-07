@@ -1,9 +1,9 @@
-// src/components/CustomerForm.jsx
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Button, Box
 } from '@mui/material';
 import { useState, useEffect } from 'react';
+import DialogMotionTransition from './DialogMotionTransition';
 
 export default function CustomerForm({ initialData, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -11,7 +11,7 @@ export default function CustomerForm({ initialData, onClose, onSubmit }) {
     lastName: '',
     email: '',
     phone: '',
-    address: '', // address como string
+    address: '',
   });
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function CustomerForm({ initialData, onClose, onSubmit }) {
         lastName: initialData.lastName || '',
         email: initialData.email || '',
         phone: initialData.phone || '',
-        address: initialData.address || '', // address como string
+        address: initialData.address || '',
       });
     } else {
       setFormData({
@@ -35,10 +35,7 @@ export default function CustomerForm({ initialData, onClose, onSubmit }) {
   }, [initialData]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = () => {
@@ -46,44 +43,25 @@ export default function CustomerForm({ initialData, onClose, onSubmit }) {
   };
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      scroll="paper"
+      PaperProps={{ sx: { maxHeight: '85vh' } }}
+      TransitionComponent={DialogMotionTransition}
+      keepMounted
+      BackdropProps={{ style: { backgroundColor: 'rgba(0,0,0,0.25)' } }}
+    >
       <DialogTitle>{initialData ? 'Editar Cliente' : 'Agregar Cliente'}</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField
-            label="Nombre"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            label="Apellido"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            label="Correo electrónico"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            label="Teléfono"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-          />
-          <TextField
-            label="Dirección"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-          />
+          <TextField label="Nombre" name="firstName" value={formData.firstName} onChange={handleChange} required />
+          <TextField label="Apellido" name="lastName" value={formData.lastName} onChange={handleChange} required />
+          <TextField label="Correo electrónico" name="email" type="email" value={formData.email} onChange={handleChange} required />
+          <TextField label="Teléfono" name="phone" value={formData.phone} onChange={handleChange} />
+          <TextField label="Dirección" name="address" value={formData.address} onChange={handleChange} />
         </Box>
       </DialogContent>
       <DialogActions>

@@ -3,19 +3,28 @@ import {
   Button, Typography, Box
 } from '@mui/material';
 import dayjs from 'dayjs';
+import DialogMotionTransition from './DialogMotionTransition';
 
 export default function ReservationDetailModal({ reservation, onClose }) {
   if (!reservation) return null;
 
   const { customerId, tourId, date, people, totalPrice, status, createdAt } = reservation;
-
-  // Si el backend no devuelve totalPrice, lo calculamos aquí
   const calculatedPrice = totalPrice ?? (tourId?.price * people);
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      scroll="paper"
+      PaperProps={{ sx: { maxHeight: '85vh' } }}
+      TransitionComponent={DialogMotionTransition}
+      keepMounted
+      BackdropProps={{ style: { backgroundColor: 'rgba(0,0,0,0.25)' } }}
+    >
       <DialogTitle>Detalle de la Reservación</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
         <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Typography variant="subtitle1">
             <strong>Cliente:</strong>{' '}

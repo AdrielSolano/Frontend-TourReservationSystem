@@ -1,13 +1,22 @@
 // src/components/TourDetailModal.jsx
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Typography, Button, Grid, List, ListItem, ListItemText
+  Typography, Button, List, ListItem, ListItemText
 } from '@mui/material';
 import dayjs from 'dayjs';
+import DialogMotionTransition from './DialogMotionTransition'; // 👈
 
 export default function TourDetailModal({ tour, onClose }) {
   return (
-    <Dialog open={Boolean(tour)} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open={Boolean(tour)}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      TransitionComponent={DialogMotionTransition}  // 👈 animación
+      keepMounted
+      BackdropProps={{ style: { backgroundColor: 'rgba(0,0,0,0.25)' } }}
+    >
       <DialogTitle>Detalles del Tour</DialogTitle>
       <DialogContent>
         <Typography><strong>Nombre:</strong> {tour.name}</Typography>
