@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Container, CssBaseline } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
 import NavBar from './components/NavBar';
-import HomePage from './pages/HomePage'; // 👈 OJO: usa el nombre correcto del archivo
+import HomePage from './pages/Homepage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CustomersPage from './pages/CustomersPage';
