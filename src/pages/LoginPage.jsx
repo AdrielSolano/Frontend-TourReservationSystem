@@ -1,10 +1,8 @@
 import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { TextField, Button, Container, Typography, Box, Paper } from '@mui/material';
 import AuthContext from '../context/AuthContext';
-import axios from 'axios';
-import api from '../components/api'; // Import the API instance
-import { Link } from 'react-router-dom';
+import api from '../api';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -12,7 +10,7 @@ export default function LoginPage() {
     password: '',
   });
   const [error, setError] = useState('');
-  const { login } = useContext(AuthContext);
+  const { login } = useContext(AuthContext); // login(token, user)
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -24,12 +22,20 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const response = await api.post('/auth/login', formData);
-      login(response.data.token, response.data.user);
-      navigate('/customers');
+      const response = await api.post('/auth/login', {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      const { token, user } = response.data;
+
+      login(token, user); // 👈 CORRECTO
+      navigate('/tours');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.error('Error de login:', err);
+      setError('Credenciales inválidas o error del servidor');
     }
   };
 

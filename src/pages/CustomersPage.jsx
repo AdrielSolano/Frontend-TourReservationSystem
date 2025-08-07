@@ -1,210 +1,150 @@
-import { useState, useEffect, useContext } from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper, 
-  Button, 
-  Box, 
-  Typography, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
+import { useEffect, useState } from 'react';
+import {
+  Typography,
+  Button,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   DialogActions,
-  TextField,
-  IconButton
+  Snackbar,
+  Alert,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction
 } from '@mui/material';
-import { Edit, Delete, Add } from '@mui/icons-material';
-import AuthContext from '../context/AuthContext';
-import axios from 'axios';
+import api from '../api';
+import CustomerDetailModal from '../components/CustomerDetailModal';
+import CustomerForm from '../components/CustomerForm';
 
 export default function CustomersPage() {
+  const [detailCustomer, setDetailCustomer] = useState(null);
   const [customers, setCustomers] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [currentCustomer, setCurrentCustomer] = useState(null);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: ''
-  });
-  const { user } = useContext(AuthContext);
-
-  useEffect(() => {
-    if (user) {
-      fetchCustomers();
-    }
-  }, [user]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [snackbar, setSnackbar] = useState({ message: '', severity: 'info' });
 
   const fetchCustomers = async () => {
     try {
-      const response = await axios.get('/customers');
-      setCustomers(response.data);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
+      const res = await api.get('/customers');
+      setCustomers(res.data.data.customers);
+    } catch (err) {
+      console.error('Error al cargar clientes:', err);
+      setSnackbar({ message: 'Error al cargar clientes', severity: 'error' });
     }
   };
 
-  const handleOpenDialog = (customer = null) => {
-    setCurrentCustomer(customer);
-    setFormData(
-      customer || {
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        address: ''
-      }
-    );
-    setOpenDialog(true);
+  const handleEdit = (customer) => {
+    setSelectedCustomer(customer);
+    setOpenForm(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setCurrentCustomer(null);
+  const handleDeleteRequest = (customer) => {
+    setCustomerToDelete(customer);
+    setDeleteDialogOpen(true);
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleDeleteConfirm = async () => {
     try {
-      if (currentCustomer) {
-        await axios.put(`/customers/${currentCustomer._id}`, formData);
+      await api.delete(`/customers/${customerToDelete._id}`);
+      setSnackbar({ message: 'Cliente eliminado correctamente', severity: 'success' });
+      setDeleteDialogOpen(false);
+      fetchCustomers();
+    } catch (err) {
+      console.error('Error al eliminar cliente:', err);
+      setSnackbar({ message: 'Error al eliminar cliente', severity: 'error' });
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedCustomer(null);
+    setOpenForm(true);
+  };
+
+  const handleSubmit = async (data) => {
+    try {
+      if (selectedCustomer) {
+        await api.put(`/customers/${selectedCustomer._id}`, data);
+        setSnackbar({ message: 'Cliente actualizado correctamente', severity: 'success' });
       } else {
-        await axios.post('/customers', formData);
+        await api.post('/customers', data);
+        setSnackbar({ message: 'Cliente creado correctamente', severity: 'success' });
       }
+      setOpenForm(false);
       fetchCustomers();
-      handleCloseDialog();
-    } catch (error) {
-      console.error('Error saving customer:', error);
+    } catch (err) {
+      console.error('Error al guardar:', err);
+      setSnackbar({ message: 'Error al guardar cliente', severity: 'error' });
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`/customers/${id}`);
-      fetchCustomers();
-    } catch (error) {
-      console.error('Error deleting customer:', error);
-    }
-  };
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">Customers</Typography>
-        <Button 
-          variant="contained" 
-          startIcon={<Add />} 
-          onClick={() => handleOpenDialog()}
-        >
-          Add Customer
-        </Button>
-      </Box>
+    <Box>
+      <Typography variant="h4" gutterBottom>Clientes</Typography>
+      <Button variant="contained" onClick={handleCreate}>Agregar Cliente</Button>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>First Name</TableCell>
-              <TableCell>Last Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {customers.map((customer) => (
-              <TableRow key={customer._id}>
-                <TableCell>{customer.firstName}</TableCell>
-                <TableCell>{customer.lastName}</TableCell>
-                <TableCell>{customer.email}</TableCell>
-                <TableCell>{customer.phone}</TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleOpenDialog(customer)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(customer._id)}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <List sx={{ mt: 2 }}>
+        {customers.map((c) => (
+          <ListItem
+            key={c._id}
+            divider
+            button
+            onClick={() => setDetailCustomer(c)} // 👈 abrir modal al hacer clic
+          >
+            <ListItemText
+              primary={`${c.firstName} ${c.lastName}`}
+              secondary={c.email}
+            />
+            <ListItemSecondaryAction>
+              <Button variant="outlined" onClick={(e) => { e.stopPropagation(); handleEdit(c); }} sx={{ mr: 1 }}>Editar</Button>
+              <Button variant="outlined" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteRequest(c); }}>Eliminar</Button>
+            </ListItemSecondaryAction>
+          </ListItem>
+        ))}
+      </List>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>
-          {currentCustomer ? 'Edit Customer' : 'Add New Customer'}
-        </DialogTitle>
+      {openForm && (
+        <CustomerForm
+          initialData={selectedCustomer}
+          onClose={() => setOpenForm(false)}
+          onSubmit={handleSubmit}
+        />
+      )}
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>¿Eliminar cliente?</DialogTitle>
         <DialogContent>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              fullWidth
-              label="First Name"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              required
-            />
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Last Name"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              required
-            />
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Address"
-              name="address"
-              multiline
-              rows={3}
-              value={formData.address}
-              onChange={handleChange}
-            />
-          </Box>
+          ¿Estás seguro de que quieres eliminar a <strong>{customerToDelete?.firstName} {customerToDelete?.lastName}</strong>?
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {currentCustomer ? 'Update' : 'Create'}
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error">Eliminar</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!snackbar.message}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ message: '', severity: 'info' })}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ message: '', severity: 'info' })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      {detailCustomer && (
+        <CustomerDetailModal
+          customer={detailCustomer}
+          onClose={() => setDetailCustomer(null)}
+        />
+      )}
     </Box>
   );
 }

@@ -9,35 +9,30 @@ export default function NavBar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/'); // Redirige al homepage
   };
 
   return (
-    <AppBar position="static">
+    <AppBar position="static" color="primary">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Tour Reservations
         </Typography>
-        {user ? (
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button color="inherit" component={Link} to="/customers">
-              Customers
-            </Button>
-            <Button color="inherit" component={Link} to="/tours">
-              Tours
-            </Button>
-            <Button color="inherit" component={Link} to="/reservations">
-              Reservations
-            </Button>
-            <Button color="inherit" onClick={handleLogout}>
-              Logout
-            </Button>
-          </Box>
-        ) : (
-          <Button color="inherit" component={Link} to="/login">
-            Login
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {user ? (
+            <>
+              <Button color="inherit" component={Link} to="/customers">Customers</Button>
+              <Button color="inherit" component={Link} to="/tours">Tours</Button>
+              <Button color="inherit" component={Link} to="/reservations">Reservations</Button>
+              <Button color="inherit" onClick={handleLogout}>Logout</Button>
+            </>
+          ) : (
+            <>
+              <Button color="inherit" component={Link} to="/register">Register</Button>
+              <Button color="inherit" component={Link} to="/login">Login</Button>
+            </>
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );

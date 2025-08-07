@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Container, Typography, Box, Paper } from '@mui/material';
 import axios from 'axios';
-import api from '../components/api'; // Import the API instance
+import api from '../api'; // Import the API instance
 import { Link } from 'react-router-dom';
 
 

@@ -1,280 +1,184 @@
-import { useState, useEffect, useContext } from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper, 
-  Button, 
-  Box, 
-  Typography, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions,
-  TextField,
-  IconButton,
-  Chip
+import { useState, useEffect } from 'react';
+import {
+  Typography, Button, Box, Snackbar, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  List, ListItem, ListItemText, ListItemSecondaryAction
 } from '@mui/material';
-import { Edit, Delete, Add } from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import AuthContext from '../context/AuthContext';
-import axios from 'axios';
+import api from '../api';
+import ReservationForm from '../components/ReservationForm';
+import ReservationDetailModal from '../components/ReservationDetailModal';
 
-export default function ToursPage() {
+export default function ReservationsPage() {
+  const [reservations, setReservations] = useState([]);
+  const [selectedReservation, setSelectedReservation] = useState(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reservationToDelete, setReservationToDelete] = useState(null);
+  const [snackbar, setSnackbar] = useState({ message: '', severity: 'info' });
 
-  const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL
-});
-
-  const [tours, setTours] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [currentTour, setCurrentTour] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    duration: '',
-    price: '',
-    availableDates: [],
-    maxPeople: '',
-    isActive: true
-  });
-  const [newDate, setNewDate] = useState(null);
-  const { user } = useContext(AuthContext);
+  const fetchReservations = async () => {
+    try {
+      const res = await api.get('/reservations');
+      setReservations(res.data);
+    } catch (err) {
+      console.error('Error al cargar reservaciones:', err);
+      setSnackbar({ message: 'Error al cargar reservaciones', severity: 'error' });
+    }
+  };
 
   useEffect(() => {
-    if (user) {
-      fetchTours();
-    }
-  }, [user]);
+    fetchReservations();
+  }, []);
 
-  const fetchTours = async () => {
+  const handleCreate = () => {
+    setSelectedReservation(null);
+    setOpenForm(true);
+  };
+
+  const handleEdit = (reservation) => {
+    setSelectedReservation(reservation);
+    setOpenForm(true);
+  };
+
+  const handleOpenDetail = (reservation) => {
+    setSelectedReservation(reservation);
+    setOpenDetail(true);
+  };
+
+  const handleDeleteRequest = (reservation) => {
+    setReservationToDelete(reservation);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
-      const response = await api.get('/tours');
-      setTours(response.data);
-    } catch (error) {
-      console.error('Error fetching tours:', error);
+      await api.delete(`/reservations/${reservationToDelete._id}`);
+      setSnackbar({ message: 'Reservación eliminada correctamente', severity: 'success' });
+      setDeleteDialogOpen(false);
+      fetchReservations();
+    } catch (err) {
+      console.error('Error al eliminar reservación:', err);
+      setSnackbar({ message: 'Error al eliminar reservación', severity: 'error' });
     }
   };
 
-  const handleOpenDialog = (tour = null) => {
-    setCurrentTour(tour);
-    setFormData(
-      tour || {
-        name: '',
-        description: '',
-        duration: '',
-        price: '',
-        availableDates: [],
-        maxPeople: '',
-        isActive: true
-      }
-    );
-    setOpenDialog(true);
-  };
+ const handleSubmit = async (data) => {
+  try {
+    if (selectedReservation) {
+      const res = await api.put(`/reservations/${selectedReservation._id}`, data);
+      setSnackbar({ message: 'Reservación actualizada correctamente', severity: 'success' });
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setCurrentTour(null);
-    setNewDate(null);
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleAddDate = () => {
-    if (newDate) {
-      setFormData({
-        ...formData,
-        availableDates: [...formData.availableDates, newDate],
-      });
-      setNewDate(null);
+      const updated = res.data;
+      setSelectedReservation(prev => ({ ...prev, ...updated })); // ✅ Aquí actualizas los detalles
+    } else {
+      await api.post('/reservations', data);
+      setSnackbar({ message: 'Reservación creada correctamente', severity: 'success' });
     }
-  };
 
-  const handleRemoveDate = (dateToRemove) => {
-    setFormData({
-      ...formData,
-      availableDates: formData.availableDates.filter(date => date !== dateToRemove),
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (currentTour) {
-        await api.put(`/tours/${currentTour._id}`, formData);
-      } else {
-        await api.post('/tours', formData);
-      }
-      fetchTours();
-      handleCloseDialog();
-    } catch (error) {
-      console.error('Error saving tour:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/tours/${id}`);
-      fetchTours();
-    } catch (error) {
-      console.error('Error deleting tour:', error);
-    }
-  };
+    setOpenForm(false);
+    fetchReservations();
+  } catch (err) {
+    console.error('Error al guardar reservación:', err);
+    setSnackbar({ message: 'Error al guardar reservación', severity: 'error' });
+  }
+};
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">Tours</Typography>
-        <Button 
-          variant="contained" 
-          startIcon={<Add />} 
-          onClick={() => handleOpenDialog()}
-        >
-          Add Tour
-        </Button>
-      </Box>
+    <Box>
+      <Typography variant="h4" gutterBottom>Reservaciones</Typography>
+      <Button variant="contained" onClick={handleCreate}>Agregar Reservación</Button>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Duration</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tours.map((tour) => (
-              <TableRow key={tour._id}>
-                <TableCell>{tour.name}</TableCell>
-                <TableCell>{tour.description.substring(0, 50)}...</TableCell>
-                <TableCell>{tour.duration} hours</TableCell>
-                <TableCell>${tour.price}</TableCell>
-                <TableCell>
-                  <Chip 
-                    label={tour.isActive ? 'Active' : 'Inactive'} 
-                    color={tour.isActive ? 'success' : 'error'} 
-                  />
-                </TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleOpenDialog(tour)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(tour._id)}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {currentTour ? 'Edit Tour' : 'Add New Tour'}
-        </DialogTitle>
-        <DialogContent>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Tour Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Description"
-              name="description"
-              multiline
-              rows={4}
-              value={formData.description}
-              onChange={handleChange}
-              required
-            />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                margin="normal"
-                label="Duration (hours)"
-                name="duration"
-                type="number"
-                value={formData.duration}
-                onChange={handleChange}
-                required
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                margin="normal"
-                label="Price"
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                margin="normal"
-                label="Max People"
-                name="maxPeople"
-                type="number"
-                value={formData.maxPeople}
-                onChange={handleChange}
-                required
-                sx={{ flex: 1 }}
-              />
+      <List sx={{ mt: 2 }}>
+        {reservations.map((r) => (
+          <ListItem
+            key={r._id}
+            divider
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              '&:hover': { backgroundColor: '#f5f5f5' },
+              cursor: 'pointer',
+              borderRadius: 2,
+              mb: 1,
+              px: 2
+            }}
+            onClick={() => handleOpenDetail(r)}
+          >
+            <Box>
+              <Typography variant="subtitle1">
+                {`${r.customerId?.firstName || 'Cliente'} ${r.customerId?.lastName || ''}`}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Tour: {r.tourId?.name || '-'}
+              </Typography>
             </Box>
-            
-            <Typography variant="subtitle1" sx={{ mt: 2 }}>Available Dates</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="Add Available Date"
-                  value={newDate}
-                  onChange={setNewDate}
-                  renderInput={(params) => <TextField {...params} />}
-                />
-              </LocalizationProvider>
-              <Button variant="outlined" onClick={handleAddDate}>
-                Add Date
+            <Box>
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ mr: 1 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(r);
+                }}
+              >
+                Editar
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteRequest(r);
+                }}
+              >
+                Eliminar
               </Button>
             </Box>
-            
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-              {formData.availableDates.map((date, index) => (
-                <Chip
-                  key={index}
-                  label={new Date(date).toLocaleDateString()}
-                  onDelete={() => handleRemoveDate(date)}
-                />
-              ))}
-            </Box>
-          </Box>
+          </ListItem>
+        ))}
+      </List>
+
+
+
+      {openForm && (
+        <ReservationForm
+          initialData={selectedReservation}
+          onClose={() => setOpenForm(false)}
+          onSubmit={handleSubmit}
+        />
+      )}
+
+      {openDetail && selectedReservation && (
+        <ReservationDetailModal
+          reservation={selectedReservation}
+          onClose={() => setOpenDetail(false)}
+        />
+      )}
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>¿Eliminar reservación?</DialogTitle>
+        <DialogContent>
+          ¿Seguro que deseas eliminar esta reservación?
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {currentTour ? 'Update' : 'Create'}
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error">Eliminar</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!snackbar.message}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ message: '', severity: 'info' })}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ message: '', severity: 'info' })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

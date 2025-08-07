@@ -1,274 +1,173 @@
-import { useState, useEffect, useContext } from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper, 
-  Button, 
-  Box, 
-  Typography, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
+import { useState, useEffect } from 'react';
+import {
+  Typography,
+  Button,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   DialogActions,
-  TextField,
-  IconButton,
-  Chip
+  Snackbar,
+  Alert,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction
 } from '@mui/material';
-import { Edit, Delete, Add } from '@mui/icons-material';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import AuthContext from '../context/AuthContext';
-import api from '../components/api'; 
+import api from '../api';
+import TourForm from '../components/TourForm';
+import TourDetailModal from '../components/TourDetailModal';
 
 export default function ToursPage() {
   const [tours, setTours] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [currentTour, setCurrentTour] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    duration: '',
-    price: '',
-    availableDates: [],
-    maxPeople: '',
-    isActive: true
-  });
-  const [newDate, setNewDate] = useState(null);
-  const { user } = useContext(AuthContext);
-
-  useEffect(() => {
-    if (user) {
-      fetchTours();
-    }
-  }, [user]);
+  const [selectedTour, setSelectedTour] = useState(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [tourToDelete, setTourToDelete] = useState(null);
+  const [snackbar, setSnackbar] = useState({ message: '', severity: 'info' });
 
   const fetchTours = async () => {
     try {
-      const response = await api.get('/tours');
-      setTours(response.data);
-    } catch (error) {
-      console.error('Error fetching tours:', error);
+      const res = await api.get('/tours');
+      setTours(res.data);
+    } catch (err) {
+      console.error('Error al obtener tours:', err);
+      setSnackbar({ message: 'Error al obtener tours', severity: 'error' });
     }
   };
 
-  const handleOpenDialog = (tour = null) => {
-    setCurrentTour(tour);
-    setFormData(
-      tour || {
-        name: '',
-        description: '',
-        duration: '',
-        price: '',
-        availableDates: [],
-        maxPeople: '',
-        isActive: true
-      }
-    );
-    setOpenDialog(true);
+  useEffect(() => {
+    fetchTours();
+  }, []);
+
+  const handleCreate = () => {
+    setSelectedTour(null);
+    setOpenForm(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setCurrentTour(null);
-    setNewDate(null);
+  const handleEdit = (tour) => {
+    setSelectedTour(tour);
+    setOpenForm(true);
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleDeleteRequest = (tour) => {
+    setTourToDelete(tour);
+    setDeleteDialogOpen(true);
   };
 
-  const handleAddDate = () => {
-    if (newDate) {
-      setFormData({
-        ...formData,
-        availableDates: [...formData.availableDates, newDate],
-      });
-      setNewDate(null);
-    }
-  };
-
-  const handleRemoveDate = (dateToRemove) => {
-    setFormData({
-      ...formData,
-      availableDates: formData.availableDates.filter(date => date !== dateToRemove),
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleDeleteConfirm = async () => {
     try {
-      if (currentTour) {
-        await api.put(`/tours/${currentTour._id}`, formData);
+      await api.delete(`/tours/${tourToDelete._id}`);
+      setSnackbar({ message: 'Tour eliminado correctamente', severity: 'success' });
+      setDeleteDialogOpen(false);
+      fetchTours();
+    } catch (err) {
+      console.error('Error al eliminar tour:', err);
+      setSnackbar({ message: 'Error al eliminar tour', severity: 'error' });
+    }
+  };
+
+  const handleSubmit = async (data) => {
+    try {
+      if (selectedTour) {
+        await api.put(`/tours/${selectedTour._id}`, data);
+        setSnackbar({ message: 'Tour actualizado correctamente', severity: 'success' });
       } else {
-        await api.post('/tours', formData);
+        await api.post('/tours', data);
+        setSnackbar({ message: 'Tour creado correctamente', severity: 'success' });
       }
+      setOpenForm(false);
       fetchTours();
-      handleCloseDialog();
-    } catch (error) {
-      console.error('Error saving tour:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/tours/${id}`);
-      fetchTours();
-    } catch (error) {
-      console.error('Error deleting tour:', error);
+    } catch (err) {
+      console.error('Error al guardar tour:', err);
+      setSnackbar({ message: 'Error al guardar tour', severity: 'error' });
     }
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">Tours</Typography>
-        <Button 
-          variant="contained" 
-          startIcon={<Add />} 
-          onClick={() => handleOpenDialog()}
-        >
-          Add Tour
-        </Button>
-      </Box>
+    <Box>
+      <Typography variant="h4" gutterBottom>Tours</Typography>
+      <Button variant="contained" onClick={handleCreate}>Agregar Tour</Button>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Duration</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tours.map((tour) => (
-              <TableRow key={tour._id}>
-                <TableCell>{tour.name}</TableCell>
-                <TableCell>{tour.description.substring(0, 50)}...</TableCell>
-                <TableCell>{tour.duration} hours</TableCell>
-                <TableCell>${tour.price}</TableCell>
-                <TableCell>
-                  <Chip 
-                    label={tour.isActive ? 'Active' : 'Inactive'} 
-                    color={tour.isActive ? 'success' : 'error'} 
-                  />
-                </TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleOpenDialog(tour)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(tour._id)}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {currentTour ? 'Edit Tour' : 'Add New Tour'}
-        </DialogTitle>
-        <DialogContent>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Tour Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
+      <List sx={{ mt: 2 }}>
+        {tours.map((tour) => (
+          <ListItem
+            key={tour._id}
+            divider
+            button
+            onClick={() => {
+              setSelectedTour(tour);
+              setOpenDetail(true);
+            }}
+          >
+            <ListItemText
+              primary={tour.name}
+              secondary={`$${tour.price}`}
             />
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Description"
-              name="description"
-              multiline
-              rows={4}
-              value={formData.description}
-              onChange={handleChange}
-              required
-            />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                margin="normal"
-                label="Duration (hours)"
-                name="duration"
-                type="number"
-                value={formData.duration}
-                onChange={handleChange}
-                required
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                margin="normal"
-                label="Price"
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                margin="normal"
-                label="Max People"
-                name="maxPeople"
-                type="number"
-                value={formData.maxPeople}
-                onChange={handleChange}
-                required
-                sx={{ flex: 1 }}
-              />
-            </Box>
-            
-            <Typography variant="subtitle1" sx={{ mt: 2 }}>Available Dates</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="Add Available Date"
-                  value={newDate}
-                  onChange={setNewDate}
-                  renderInput={(params) => <TextField {...params} />}
-                />
-              </LocalizationProvider>
-              <Button variant="outlined" onClick={handleAddDate}>
-                Add Date
+            <ListItemSecondaryAction>
+              <Button
+                variant="outlined"
+                onClick={(e) => { e.stopPropagation(); handleEdit(tour); }}
+                sx={{ mr: 1 }}
+              >
+                Editar
               </Button>
-            </Box>
-            
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-              {formData.availableDates.map((date, index) => (
-                <Chip
-                  key={index}
-                  label={new Date(date).toLocaleDateString()}
-                  onDelete={() => handleRemoveDate(date)}
-                />
-              ))}
-            </Box>
-          </Box>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={(e) => { e.stopPropagation(); handleDeleteRequest(tour); }}
+              >
+                Eliminar
+              </Button>
+            </ListItemSecondaryAction>
+          </ListItem>
+        ))}
+      </List>
+
+      {/* Formulario Tour */}
+      {openForm && (
+        <TourForm
+          initialData={selectedTour}
+          onClose={() => setOpenForm(false)}
+          onSubmit={handleSubmit}
+        />
+      )}
+
+      {/* Modal Detalle Tour */}
+      {openDetail && selectedTour && (
+        <TourDetailModal
+          tour={selectedTour}
+          onClose={() => {
+            setOpenDetail(false);
+            setSelectedTour(null);
+          }}
+          onUpdate={fetchTours}
+        />
+      )}
+
+      {/* Confirmar eliminación */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>¿Eliminar tour?</DialogTitle>
+        <DialogContent>
+          ¿Estás seguro de que quieres eliminar el tour <strong>{tourToDelete?.name}</strong>?
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {currentTour ? 'Update' : 'Create'}
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error">Eliminar</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar de mensajes */}
+      <Snackbar
+        open={!!snackbar.message}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ message: '', severity: 'info' })}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ message: '', severity: 'info' })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
