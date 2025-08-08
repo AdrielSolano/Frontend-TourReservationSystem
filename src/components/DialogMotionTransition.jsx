@@ -1,4 +1,3 @@
-// src/components/DialogMotionTransition.jsx
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 
@@ -10,7 +9,6 @@ const variants = {
   exit:    { opacity: 0, scale: 0.96, y: -8, filter: 'blur(2px)' },
 };
 
-// Componente para usar en Dialog. MUI necesita un forwardRef aquí.
 const DialogMotionTransition = forwardRef(function DialogMotionTransition(props, ref) {
   const { children, ...rest } = props;
   return (

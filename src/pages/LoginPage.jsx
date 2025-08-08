@@ -10,7 +10,7 @@ export default function LoginPage() {
     password: '',
   });
   const [error, setError] = useState('');
-  const { login } = useContext(AuthContext); // login(token, user)
+  const { login } = useContext(AuthContext); 
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -31,7 +31,7 @@ export default function LoginPage() {
 
       const { token, user } = response.data;
 
-      login(token, user); // 👈 CORRECTO
+      login(token, user); 
       navigate('/tours');
     } catch (err) {
       console.error('Error de login:', err);

@@ -1,4 +1,3 @@
-// src/components/TourForm.jsx
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, FormControlLabel, Checkbox,
@@ -20,7 +19,6 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
     isActive: true,
   });
 
-  // Fechas como objetos dayjs para render/validación
   const [availableDates, setAvailableDates] = useState([]);
   const [newDate, setNewDate] = useState(null);
 
@@ -35,7 +33,6 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
         isActive: initialData.isActive ?? true,
       });
 
-      // Normaliza fechas existentes a dayjs
       const dates = Array.isArray(initialData.availableDates)
         ? initialData.availableDates.map(d => dayjs(d))
         : [];
@@ -57,10 +54,8 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
     if (!newDate) return;
 
     const today = dayjs().startOf('day');
-    // Bloquea pasado
     if (newDate.startOf('day').isBefore(today)) return;
 
-    // Evita duplicados por día
     const exists = availableDates.some(d => d.isSame(newDate, 'day'));
     if (exists) return;
 
@@ -73,11 +68,9 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
   };
 
   const handleSubmit = async () => {
-    // Validación rápida
     if (!formData.name?.trim()) return;
     if (!String(formData.price).length || Number(formData.price) < 0) return;
 
-    // Convierte a ISO antes de enviar al backend
     const payload = {
       ...formData,
       duration: formData.duration ? Number(formData.duration) : undefined,
@@ -94,9 +87,9 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
       onClose={onClose}
       fullWidth
       maxWidth="sm"
-      scroll="paper"                               // 👈 scroll interno en el contenido
-      PaperProps={{ sx: { maxHeight: '85vh' } }}   // 👈 limita la altura total del modal
-      TransitionComponent={DialogMotionTransition} // 👈 animación
+      scroll="paper"                              
+      PaperProps={{ sx: { maxHeight: '85vh' } }} 
+      TransitionComponent={DialogMotionTransition}
       keepMounted
       BackdropProps={{ style: { backgroundColor: 'rgba(0,0,0,0.25)' } }}
     >
@@ -104,7 +97,7 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
 
       <DialogContent
         dividers
-        sx={{ maxHeight: '70vh', overflowY: 'auto' }} // 👈 área scrolleable
+        sx={{ maxHeight: '70vh', overflowY: 'auto' }} 
       >
         <Grid container spacing={2} direction="column" sx={{ mt: 1 }}>
           <Grid item xs={12}>
@@ -184,10 +177,9 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
               minDate={dayjs().startOf('day')}
               slotProps={{
                 textField: { fullWidth: true },
-                // ayuda si el popper se corta por el scroll/overflow:
                 popper: { placement: 'bottom-start' }
               }}
-              disablePortal // evita portales que a veces se superponen raro con Dialog
+              disablePortal 
             />
           </Grid>
 
@@ -201,7 +193,7 @@ export default function TourForm({ initialData, onClose, onSubmit }) {
             <List>
               {availableDates.length > 0 ? (
                 availableDates
-                  .slice() // evita mutación al ordenar
+                  .slice() 
                   .sort((a, b) => a.valueOf() - b.valueOf())
                   .map((date, index) => (
                     <ListItem

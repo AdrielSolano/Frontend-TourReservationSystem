@@ -3,7 +3,7 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#E2725B', // terracota
+      main: '#E2725B', 
     },
     secondary: {
       main: '#f4a261',

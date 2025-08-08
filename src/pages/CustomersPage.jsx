@@ -48,7 +48,6 @@ export default function CustomersPage() {
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ message: '', severity: 'info' });
 
-  // Solo para detectar móvil (xs) sin tocar laptop/desktop
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -165,7 +164,7 @@ export default function CustomersPage() {
                   listStyle: 'none',
                   display: 'flex',
                   alignItems: isXs ? 'flex-start' : 'center',
-                  flexDirection: { xs: 'column', sm: 'row' }, // solo móvil en columna
+                  flexDirection: { xs: 'column', sm: 'row' }, 
                   borderRadius: 2,
                   px: { xs: 1, sm: 2 },
                   py: { xs: 1, sm: 1.2 },

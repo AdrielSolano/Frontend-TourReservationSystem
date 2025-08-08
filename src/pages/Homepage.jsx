@@ -16,7 +16,6 @@ export default function HomePage() {
   useEffect(() => {
     if (location.state?.flashed === 'logout') {
       setShowLogoutMessage(true);
-      // Limpia el state para que al refrescar no reaparezca
       navigate(location.pathname, { replace: true, state: {} });
       const t = setTimeout(() => setShowLogoutMessage(false), 2500);
       return () => clearTimeout(t);
@@ -26,7 +25,6 @@ export default function HomePage() {
   return (
     <Box
       sx={{
-        // Mantén laptop igual; en móvil damos respirito
         minHeight: { xs: '100vh', md: '80vh' },
         display: 'flex',
         justifyContent: 'center',
@@ -38,7 +36,6 @@ export default function HomePage() {
     >
       <Box
         sx={{
-          // Laptop intacto (md+); móvil ocupa ancho completo y altura automática
           width: { xs: '100%', md: '1100px' },
           height: { xs: 'auto', md: '500px' },
           display: 'flex',
@@ -46,7 +43,6 @@ export default function HomePage() {
           position: 'relative',
           overflow: 'hidden',
           backgroundColor: '#CB6E55',
-          // En móvil centramos verticalmente el contenido con padding
           pb: { xs: 2, md: 0 },
         }}
       >
@@ -56,7 +52,7 @@ export default function HomePage() {
           maxWidth="md"
           sx={{
             zIndex: 1,
-            px: { xs: 0, sm: 2 }, // bordes pegados en móvil
+            px: { xs: 0, sm: 2 }, 
           }}
         >
           {/* Alert con transición suave */}
@@ -79,7 +75,6 @@ export default function HomePage() {
                 letterSpacing: 0.4,
                 mb: 1,
                 color: '#F7EBDD',
-                // Tamaños solo para móvil; md+ conserva el look original
                 fontSize: { xs: '1.9rem', sm: '2.2rem', md: 'inherit' },
                 lineHeight: { xs: 1.15, md: 'inherit' },
               }}
@@ -104,7 +99,7 @@ export default function HomePage() {
             transition={{ delay: 0.15, duration: 0.45 }}
             elevation={0}
             sx={{
-              maxWidth: { xs: '100%', md: 600 }, // en móvil ocupa ancho completo
+              maxWidth: { xs: '100%', md: 600 }, 
               mx: 'auto',
               backdropFilter: 'blur(8px)',
               backgroundColor: 'rgba(255,255,255,0.08)',
@@ -136,7 +131,7 @@ export default function HomePage() {
                     to="/login"
                     variant="contained"
                     size="large"
-                    fullWidth // solo ayuda en móvil; en md+ no afecta por maxWidth del card
+                    fullWidth 
                     sx={{
                       maxWidth: { xs: '100%', sm: 360 },
                       mx: 'auto',

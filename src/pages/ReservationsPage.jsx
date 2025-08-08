@@ -29,7 +29,6 @@ export default function ReservationsPage() {
   const [reservationToDelete, setReservationToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ message: '', severity: 'info' });
 
-  // Solo para móvil, sin tocar sm+
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -37,7 +36,6 @@ export default function ReservationsPage() {
     try {
       setLoading(true);
       const res = await api.get(`/reservations?page=${currentPage}&limit=${limit}`);
-      // Ajusta según tu backend: data/pages vs data.totalPages
       setReservations(res.data.data || []);
       setTotalPages(res.data.pages || res.data.totalPages || 1);
     } catch (err) {
@@ -146,7 +144,7 @@ export default function ReservationsPage() {
                   listStyle: 'none',
                   display: 'flex',
                   alignItems: isXs ? 'flex-start' : 'center',
-                  flexDirection: { xs: 'column', sm: 'row' }, // móvil en columna
+                  flexDirection: { xs: 'column', sm: 'row' }, 
                   borderRadius: 2,
                   px: { xs: 1, sm: 2 },
                   py: { xs: 1, sm: 1.2 },
@@ -220,7 +218,7 @@ export default function ReservationsPage() {
             initialData={selectedReservation}
             onClose={() => setOpenForm(false)}
             onSubmit={handleSubmit}
-            fullScreen={isXs} // si tu Dialog lo soporta
+            fullScreen={isXs} 
           />
         )}
 
@@ -228,7 +226,7 @@ export default function ReservationsPage() {
           <ReservationDetailModal
             reservation={selectedReservation}
             onClose={() => setOpenDetail(false)}
-            fullScreen={isXs} // si tu Dialog lo soporta
+            fullScreen={isXs} 
           />
         )}
 

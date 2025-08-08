@@ -1,4 +1,3 @@
-// src/App.jsx
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Container, CssBaseline } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';

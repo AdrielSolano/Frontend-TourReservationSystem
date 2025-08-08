@@ -13,7 +13,6 @@ export const createAvailableDate = (data) =>
 export const deleteAvailableDate = (id) =>
   api.delete(`/available-dates/${id}`);
 
-// Añadir token automáticamente si existe
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {

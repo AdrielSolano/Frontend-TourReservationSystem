@@ -33,14 +33,14 @@ export default function NavBar() {
     if (user) {
       navigate(path);
     } else {
-      navigate('/'); // Home
+      navigate('/'); 
     }
   };
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await logout?.(); // por si es async
+      await logout?.(); 
       setTimeout(() => {
         navigate('/', { replace: true, state: { flashed: 'logout' } });
         setIsLoggingOut(false);
@@ -161,7 +161,6 @@ export default function NavBar() {
                 </>
               )
             ) : (
-              // En móvil, los botones de auth viven en el Drawer; aquí no mostramos nada
               <></>
             )}
           </Box>
@@ -176,7 +175,7 @@ export default function NavBar() {
         anchor="left"
         open={openDrawer}
         onClose={toggleDrawer(false)}
-        ModalProps={{ keepMounted: true }} // mejor rendimiento en móvil
+        ModalProps={{ keepMounted: true }} 
       >
         {DrawerMenu}
       </Drawer>
