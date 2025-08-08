@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
-  Typography, Button, Box, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItem, Pagination, Skeleton
+  Typography, Button, Box, Dialog, DialogTitle, DialogContent, DialogActions,
+  Snackbar, Alert, List, ListItem, ListItemText, ListItemSecondaryAction,
+  Pagination, Skeleton
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { motion } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import api from '../api';
@@ -27,12 +29,17 @@ export default function ReservationsPage() {
   const [reservationToDelete, setReservationToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({ message: '', severity: 'info' });
 
-  const fetchReservations = async () => {
+  // Solo para móvil, sin tocar sm+
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const fetchReservations = async (currentPage = page) => {
     try {
       setLoading(true);
-      const res = await api.get(`/reservations?page=${page}&limit=${limit}`);
-      setReservations(res.data.data);
-      setTotalPages(res.data.pages);
+      const res = await api.get(`/reservations?page=${currentPage}&limit=${limit}`);
+      // Ajusta según tu backend: data/pages vs data.totalPages
+      setReservations(res.data.data || []);
+      setTotalPages(res.data.pages || res.data.totalPages || 1);
     } catch (err) {
       console.error('Error al cargar reservaciones:', err);
       setSnackbar({ message: 'Error al cargar reservaciones', severity: 'error' });
@@ -41,7 +48,7 @@ export default function ReservationsPage() {
     }
   };
 
-  useEffect(() => { fetchReservations(); }, [page]);
+  useEffect(() => { fetchReservations(page); }, [page]);
 
   const handleCreate = () => { setSelectedReservation(null); setOpenForm(true); };
   const handleEdit = (reservation) => { setSelectedReservation(reservation); setOpenForm(true); };
@@ -91,20 +98,37 @@ export default function ReservationsPage() {
 
   return (
     <PageTransition>
-      <Box sx={{ mt: 2 }}>
-        <Box component={motion.div} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}
-             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>Reservaciones</Typography>
-          <Button variant="contained" onClick={handleCreate}>Agregar Reservación</Button>
+      <Box sx={{ mt: 2, px: { xs: 1, sm: 0 } }}>
+        {/* Header (apila en xs; igual en laptop) */}
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: isXs ? 'stretch' : 'center',
+            mb: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 0 }
+          }}
+        >
+          <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
+            Reservaciones
+          </Typography>
+          <Button variant="contained" onClick={handleCreate} fullWidth={isXs}>
+            Agregar Reservación
+          </Button>
         </Box>
 
         {loading ? (
           <List sx={{ mt: 2 }}>
             {[...Array(limit)].map((_, i) => (
-              <ListItem key={i} sx={{ borderRadius: 2, mb: 1 }}>
+              <ListItem key={i} sx={{ borderRadius: 2, mb: 1, px: { xs: 1, sm: 2 }, py: { xs: 1, sm: 1.2 } }}>
                 <Box sx={{ width: '100%' }}>
-                  <Skeleton variant="text" width="40%" height={28} />
-                  <Skeleton variant="text" width="30%" height={20} />
+                  <Skeleton variant="text" width={isXs ? '60%' : '40%'} height={28} />
+                  <Skeleton variant="text" width={isXs ? '40%' : '30%'} height={20} />
                 </Box>
               </ListItem>
             ))}
@@ -116,30 +140,62 @@ export default function ReservationsPage() {
                 key={r._id}
                 component={motion.li}
                 variants={itemVariants}
-                divider
-                sx={{
-                  listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  '&:hover': { backgroundColor: '#f5f5f5' }, cursor: 'pointer', borderRadius: 2, mb: 1, px: 2
-                }}
+                divider={!isXs}
                 onClick={() => handleOpenDetail(r)}
+                sx={{
+                  listStyle: 'none',
+                  display: 'flex',
+                  alignItems: isXs ? 'flex-start' : 'center',
+                  flexDirection: { xs: 'column', sm: 'row' }, // móvil en columna
+                  borderRadius: 2,
+                  px: { xs: 1, sm: 2 },
+                  py: { xs: 1, sm: 1.2 },
+                  mb: 1,
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: '#f5f5f5' }
+                }}
               >
-                <Box>
-                  <Typography variant="subtitle1">
-                    {`${r.customerId?.firstName || 'Cliente'} ${r.customerId?.lastName || ''}`}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Tour: {r.tourId?.name || '-'}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Button variant="outlined" size="small" sx={{ mr: 1 }}
-                          onClick={(e) => { e.stopPropagation(); handleEdit(r); }}>
+                <ListItemText
+                  primary={`${r.customerId?.firstName || 'Cliente'} ${r.customerId?.lastName || ''}`}
+                  secondary={`Tour: ${r.tourId?.name || '-'}`}
+                  primaryTypographyProps={{ variant: 'subtitle1', noWrap: false }}
+                  secondaryTypographyProps={{ variant: 'body2' }}
+                  sx={{ pr: { sm: 2 }, width: '100%' }}
+                />
+
+                {/* Acciones originales a la derecha (ocultas en xs) */}
+                <ListItemSecondaryAction sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    sx={{ mr: 1 }}
+                    onClick={(e) => { e.stopPropagation(); handleEdit(r); }}
+                  >
                     Editar
                   </Button>
-                  <Button variant="outlined" size="small" color="error"
-                          onClick={(e) => { e.stopPropagation(); handleDeleteRequest(r); }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteRequest(r); }}
+                  >
                     Eliminar
                   </Button>
+                </ListItemSecondaryAction>
+
+                {/* Acciones SOLO móvil, debajo del texto (mismos botones) */}
+                <Box
+                  sx={{
+                    display: { xs: 'flex', sm: 'none' },
+                    width: '100%',
+                    mt: 0.5,
+                    gap: 1,
+                    justifyContent: 'flex-end'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button size="small" variant="outlined" onClick={() => handleEdit(r)}>Editar</Button>
+                  <Button size="small" variant="outlined" color="error" onClick={() => handleDeleteRequest(r)}>Eliminar</Button>
                 </Box>
               </ListItem>
             ))}
@@ -147,30 +203,55 @@ export default function ReservationsPage() {
         )}
 
         {!loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Pagination count={totalPages} page={page} onChange={(e, value) => setPage(value)} color="primary" />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(e, value) => setPage(value)}
+              color="primary"
+              size={isXs ? 'small' : 'medium'}
+              siblingCount={isXs ? 0 : 1}
+            />
           </Box>
         )}
 
         {openForm && (
-          <ReservationForm initialData={selectedReservation} onClose={() => setOpenForm(false)} onSubmit={handleSubmit} />
+          <ReservationForm
+            initialData={selectedReservation}
+            onClose={() => setOpenForm(false)}
+            onSubmit={handleSubmit}
+            fullScreen={isXs} // si tu Dialog lo soporta
+          />
         )}
 
         {openDetail && selectedReservation && (
-          <ReservationDetailModal reservation={selectedReservation} onClose={() => setOpenDetail(false)} />
+          <ReservationDetailModal
+            reservation={selectedReservation}
+            onClose={() => setOpenDetail(false)}
+            fullScreen={isXs} // si tu Dialog lo soporta
+          />
         )}
 
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} fullScreen={isXs}>
           <DialogTitle>¿Eliminar reservación?</DialogTitle>
-          <DialogContent>¿Seguro que deseas eliminar esta reservación?</DialogContent>
-          <DialogActions>
+          <DialogContent>
+            ¿Seguro que deseas eliminar esta reservación?
+          </DialogContent>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
             <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleDeleteConfirm} variant="contained" color="error">Eliminar</Button>
           </DialogActions>
         </Dialog>
 
-        <Snackbar open={!!snackbar.message} autoHideDuration={4000} onClose={() => setSnackbar({ message: '', severity: 'info' })}>
-          <Alert severity={snackbar.severity} onClose={() => setSnackbar({ message: '', severity: 'info' })}>
+        <Snackbar
+          open={!!snackbar.message}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar({ message: '', severity: 'info' })}
+        >
+          <Alert
+            severity={snackbar.severity}
+            onClose={() => setSnackbar({ message: '', severity: 'info' })}
+          >
             {snackbar.message}
           </Alert>
         </Snackbar>
